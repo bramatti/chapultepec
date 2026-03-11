@@ -1,7 +1,9 @@
 // 1. CONFIGURAÇÕES DA PLANILHA
-const SHEET_ID = '1P0_6foBcvG8R9a_A47MdWAgJIK5uvRzjaz6vGHn8VeA'; // <-- Substitua pelo seu ID
-const SHEET_NAME = 'países'; // Nome exato da aba onde estão os dados
+const SHEET_ID = '1Zu4kyN3YKXHzFio0ZFaDPS4wzt4MdjNZ8VhOev-PVZ0'; // <-- Substitua pelo seu ID
+const SHEET_NAME = 'países'; 
 const URL_GOOGLE_SHEETS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+
+const MAX_PREGUNTAS = 10; 
 
 let datos = [];
 let preguntasRestantes = [];
@@ -19,7 +21,7 @@ const quizArea = document.getElementById('quiz-area');
 const resultadosArea = document.getElementById('resultados-area');
 const tituloPregunta = document.querySelector('.pregunta');
 
-// 2. FUNÇÃO PARA BUSCAR OS DADOS NA PLANILHA
+// 2. BUSCAR DADOS NA PLANILHA
 async function carregarDadosDaPlanilha() {
     try {
         tituloPregunta.textContent = "Cargando datos desde Google Sheets...";
@@ -28,12 +30,9 @@ async function carregarDadosDaPlanilha() {
         const response = await fetch(URL_GOOGLE_SHEETS);
         const text = await response.text();
         
-        // O Google retorna um formato específico. Aqui extraímos apenas o JSON útil:
         const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
         const jsonData = JSON.parse(jsonString);
 
-        // Transformamos as linhas da planilha no formato que o nosso quiz entende
-        // Ignoramos a primeira linha caso ela seja o cabeçalho (País, Nivel de Libertad, etc)
         datos = jsonData.table.rows.map(row => {
             return {
                 pais: row.c[0] ? row.c[0].v : "",
@@ -41,9 +40,8 @@ async function carregarDadosDaPlanilha() {
                 evolucion: row.c[2] ? row.c[2].v : "",
                 resumen: row.c[3] ? row.c[3].v : ""
             };
-        }).filter(d => d.pais !== "" && d.pais !== "País"); // Filtra linhas vazias e o cabeçalho
+        }).filter(d => d.pais !== "" && d.pais !== "País");
 
-        // Depois que os dados carregam, iniciamos o jogo
         tituloPregunta.textContent = "¿De qué país estamos hablando?";
         iniciarJuego();
 
@@ -53,7 +51,7 @@ async function carregarDadosDaPlanilha() {
     }
 }
 
-// 3. LÓGICA DO QUIZ (Mesma de antes)
+// 3. LÓGICA DO QUIZ
 function iniciarJuego() {
     preguntasRestantes = [...datos];
     puntuacion = 0;
@@ -64,7 +62,7 @@ function iniciarJuego() {
 }
 
 function cargarSiguientePregunta() {
-    if (preguntasRestantes.length === 0) {
+    if (totalPreguntasJugadas >= MAX_PREGUNTAS || preguntasRestantes.length === 0) {
         mostrarResultados();
         return;
     }
@@ -82,13 +80,13 @@ function cargarSiguientePregunta() {
     resumenText.textContent = preguntaActual.resumen;
 
     let opciones = [preguntaActual.pais];
-    let otrosPaises = datos.filter(d => d.pais !== preguntaActual.pais);
+    let posiblesIncorrectas = [...preguntasRestantes]; 
     
-    for(let i=0; i<2; i++) {
-        if(otrosPaises.length > 0) {
-            const indexWrong = Math.floor(Math.random() * otrosPaises.length);
-            opciones.push(otrosPaises[indexWrong].pais);
-            otrosPaises.splice(indexWrong, 1);
+    for(let i = 0; i < 2; i++) {
+        if(posiblesIncorrectas.length > 0) {
+            const indexWrong = Math.floor(Math.random() * posiblesIncorrectas.length);
+            opciones.push(posiblesIncorrectas[indexWrong].pais);
+            posiblesIncorrectas.splice(indexWrong, 1);
         }
     }
 
@@ -109,18 +107,28 @@ function verificarRespuesta(paisSeleccionado, boton) {
     feedbackDiv.classList.remove('hidden');
     btnSiguiente.classList.remove('hidden');
 
+    let textoFeedbackSiguiente = "";
+
+    if (totalPreguntasJugadas < MAX_PREGUNTAS) {
+        btnSiguiente.textContent = `Próxima pregunta (${totalPreguntasJugadas + 1} de ${MAX_PREGUNTAS})`;
+        textoFeedbackSiguiente = "Siga a la próxima pregunta y al final vea cuántos puntos logra alcanzar.";
+    } else {
+        btnSiguiente.textContent = "Ver resultados";
+        textoFeedbackSiguiente = "¡Ha terminado! Haga clic abajo para ver sus resultados.";
+    }
+
     if (paisSeleccionado === preguntaActual.pais) {
         puntuacion++;
         boton.style.backgroundColor = '#27ae60'; 
         feedbackDiv.classList.add('correct');
-        feedbackDiv.textContent = "¡Muy bien! Siga a la próxima pregunta y al final vea cuántos puntos logra alcanzar.";
+        feedbackDiv.textContent = `¡Muy bien! ${textoFeedbackSiguiente}`;
     } else {
         boton.style.backgroundColor = '#c0392b'; 
         Array.from(opcionesContainer.children).forEach(btn => {
             if(btn.textContent === preguntaActual.pais) btn.style.backgroundColor = '#27ae60';
         });
         feedbackDiv.classList.add('incorrect');
-        feedbackDiv.textContent = `¡No! El país es ${preguntaActual.pais}. Siga a la próxima pregunta y al final vea cuántos puntos logra alcanzar.`;
+        feedbackDiv.textContent = `¡No! El país es ${preguntaActual.pais}. ${textoFeedbackSiguiente}`;
     }
 }
 
@@ -128,11 +136,19 @@ function mostrarResultados() {
     quizArea.classList.add('hidden');
     resultadosArea.classList.remove('hidden');
     document.getElementById('puntuacion').textContent = puntuacion;
-    document.getElementById('total-preguntas').textContent = totalPreguntasJugadas;
+    document.getElementById('total-preguntas').textContent = MAX_PREGUNTAS;
 }
 
 btnSiguiente.addEventListener('click', cargarSiguientePregunta);
 document.getElementById('btn-reiniciar').addEventListener('click', iniciarJuego);
 
-// 4. INICIAR APLICATIVO BUSCANDO OS DADOS PRIMEIRO
+// 4. LÓGICA DO WHATSAPP
+document.getElementById('btn-whatsapp').addEventListener('click', () => {
+    const linkDoQuiz = window.location.href; 
+    const textoMensagem = `¿Has visto las últimas noticias sobre la libertad de prensa en 23 países de América? He acertado ${puntuacion} de ${MAX_PREGUNTAS} preguntas sobre el tema y te reto a que también respondas al cuestionario. ${linkDoQuiz}`;
+    const urlWhatsApp = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoMensagem)}`;
+    window.open(urlWhatsApp, '_blank');
+});
+
+// 5. INICIAR
 carregarDadosDaPlanilha();
