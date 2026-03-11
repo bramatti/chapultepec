@@ -1,7 +1,7 @@
-// 1. CONFIGURAÇÕES DA PLANILHA
-const SHEET_ID = '1Zu4kyN3YKXHzFio0ZFaDPS4wzt4MdjNZ8VhOev-PVZ0'; // <-- Substitua pelo seu ID
-const SHEET_NAME = 'países'; 
-const URL_GOOGLE_SHEETS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+https://docs.google.com/spreadsheets/d/e/2PACX-1vTwRT6eTI5Ahw5bf1W0jbS6gMgS3fg5dPgmKIPMhGZ1fQugK4mfMbpsxfhQcEYvojOQHBgOda6qgLG4/pub?gid=0&single=true&output=csv
+
+// 1. COLE O SEU LINK CSV AQUI DENTRO DAS ASPAS
+const URL_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTwRT6eTI5Ahw5bf1W0jbS6gMgS3fg5dPgmKIPMhGZ1fQugK4mfMbpsxfhQcEYvojOQHBgOda6qgLG4/pub?gid=0&single=true&output=csv'; 
 
 const MAX_PREGUNTAS = 10; 
 
@@ -21,33 +21,50 @@ const quizArea = document.getElementById('quiz-area');
 const resultadosArea = document.getElementById('resultados-area');
 const tituloPregunta = document.querySelector('.pregunta');
 
-// 2. BUSCAR DADOS NA PLANILHA
+// 2. BUSCAR DADOS DA PLANILHA EM FORMATO CSV
 async function carregarDadosDaPlanilha() {
     try {
         tituloPregunta.textContent = "Cargando datos desde Google Sheets...";
         opcionesContainer.innerHTML = '';
         
-        const response = await fetch(URL_GOOGLE_SHEETS);
+        const response = await fetch(URL_CSV);
+        if (!response.ok) throw new Error('Falha na resposta da rede');
+        
         const text = await response.text();
         
-        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-        const jsonData = JSON.parse(jsonString);
+        // Separa o texto em linhas
+        const linhas = text.split('\n');
+        datos = [];
 
-        datos = jsonData.table.rows.map(row => {
-            return {
-                pais: row.c[0] ? row.c[0].v : "",
-                nivel: row.c[1] ? row.c[1].v : "",
-                evolucion: row.c[2] ? row.c[2].v : "",
-                resumen: row.c[3] ? row.c[3].v : ""
-            };
-        }).filter(d => d.pais !== "" && d.pais !== "País");
+        // Ignora a primeira linha (cabeçalho) e percorre o resto
+        for (let i = 1; i < linhas.length; i++) {
+            if (!linhas[i].trim()) continue; // Pula linhas vazias
+            
+            // Separa por vírgulas, mas ignora as vírgulas que estão dentro de aspas (textos longos)
+            const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(item => {
+                // Remove aspas no começo e fim que o Google coloca em textos com vírgulas
+                return item.replace(/^"|"$/g, '').replace(/""/g, '"').trim();
+            });
+
+            // Se a linha tem dados válidos, adiciona ao nosso banco do jogo
+            if (colunas.length >= 4 && colunas[0] !== "") {
+                datos.push({
+                    pais: colunas[0],
+                    nivel: colunas[1],
+                    evolucion: colunas[2],
+                    resumen: colunas[3]
+                });
+            }
+        }
+
+        if (datos.length === 0) throw new Error('Nenhum dado encontrado');
 
         tituloPregunta.textContent = "¿De qué país estamos hablando?";
         iniciarJuego();
 
     } catch (error) {
-        console.error("Erro ao carregar os dados:", error);
-        tituloPregunta.textContent = "Error al cargar los datos. Por favor, verifique si la planilla es pública.";
+        console.error("Erro ao carregar o CSV:", error);
+        tituloPregunta.textContent = "Error al cargar los datos. Verifique el enlace de la planilla.";
     }
 }
 
