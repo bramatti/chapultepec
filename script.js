@@ -1,7 +1,7 @@
 // 1. CONFIGURAÇÕES DA PLANILHA
 const SHEET_ID = '1Zu4kyN3YKXHzFio0ZFaDPS4wzt4MdjNZ8VhOev-PVZ0'; // <-- Substitua pelo seu ID
 const SHEET_NAME = 'países'; 
-const URL_GOOGLE_SHEETS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+const URL_GOOGLE_SHEETS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
 const MAX_PREGUNTAS = 10; 
 
