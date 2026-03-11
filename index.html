@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Periodismo bajo presión</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Periodismo bajo presión</h1>
+            <h2>Ponga a prueba sus conocimientos sobre la libertad de informar en 23 países de América y el Caribe.</h2>
+        </header>
+
+        <main id="quiz-area">
+            <div id="info-card" class="card">
+                <p><strong>País:</strong> <span class="censored">XXXXXXX</span></p>
+                <p><strong>Nivel de Libertad:</strong> <span id="nivel-text"></span></p>
+                <p><strong>Evolución reciente:</strong> <span id="evolucion-text"></span></p>
+                <p><strong>Resumen:</strong> <span id="resumen-text"></span></p>
+                <p class="fuente"><em>Fuente de los datos: Índice Chapultepec de Libertad de Expresión (Sociedad Interamericana de Prensa en alianza con investigadores de la Universidad Católica Andrés Bello, de Venezuela)</em></p>
+            </div>
+
+            <h3 class="pregunta">¿De qué país estamos hablando?</h3>
+            
+            <div id="opciones-container">
+                </div>
+
+            <div id="feedback" class="feedback-mensaje hidden"></div>
+            
+            <button id="btn-siguiente" class="hidden">Próxima pregunta</button>
+        </main>
+
+        <div id="resultados-area" class="hidden text-center">
+            <h2>¡Quiz Terminado!</h2>
+            <p>Has acertado <span id="puntuacion"></span> de <span id="total-preguntas"></span> preguntas.</p>
+            <button id="btn-reiniciar">Volver a jugar</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
